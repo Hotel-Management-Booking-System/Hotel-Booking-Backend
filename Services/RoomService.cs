@@ -1,4 +1,4 @@
-using HotelBookingAPI.Data;
+﻿using HotelBookingAPI.Data;
 using HotelBookingWebsite.DTOs;
 using HotelBookingWebsite.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,15 +15,12 @@ public class RoomService : IRoomService
         _logger = logger;
     }
 
+    // ✅ Get rooms by hotel
     public async Task<IEnumerable<RoomResponseDto>> GetByHotel(int hotelId)
     {
-        _logger.LogInformation("Fetching rooms for HotelId: {HotelId}", hotelId);
-
         var rooms = await _context.Rooms
             .Where(r => r.HotelId == hotelId)
             .ToListAsync();
-
-        _logger.LogInformation("Fetched {Count} rooms for HotelId: {HotelId}", rooms.Count, hotelId);
 
         return rooms.Select(room => new RoomResponseDto
         {
@@ -35,32 +32,31 @@ public class RoomService : IRoomService
         });
     }
 
-    public async Task<Room> GetById(int id)
+    // ✅ Get single room
+    public async Task<RoomResponseDto> GetById(int id)
     {
-        _logger.LogInformation("Fetching room with Id: {RoomId}", id);
-
         var room = await _context.Rooms.FindAsync(id);
 
         if (room == null)
-        {
-            _logger.LogWarning("Room not found with Id: {RoomId}", id);
             throw new KeyNotFoundException("Room not found");
-        }
 
-        return room;
+        return new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        };
     }
 
-    public async Task<Room> Create(RoomDto dto)
+    // ✅ Create room
+    public async Task<RoomResponseDto> Create(RoomDto dto)
     {
-        _logger.LogInformation("Creating room for HotelId: {HotelId}", dto.HotelId);
-
         var hotelExists = await _context.Hotels.AnyAsync(h => h.Id == dto.HotelId);
 
         if (!hotelExists)
-        {
-            _logger.LogWarning("Room creation failed. Invalid HotelId: {HotelId}", dto.HotelId);
             throw new ArgumentException("Invalid HotelId");
-        }
 
         var room = new Room
         {
@@ -75,22 +71,23 @@ public class RoomService : IRoomService
         _context.Rooms.Add(room);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Room created successfully with Id: {RoomId}", room.Id);
-
-        return room;
+        return new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        };
     }
 
-    public async Task<Room> Update(int id, RoomDto dto)
+    // ✅ Update room
+    public async Task<RoomResponseDto> Update(int id, RoomDto dto)
     {
-        _logger.LogInformation("Updating room with Id: {RoomId}", id);
-
         var room = await _context.Rooms.FindAsync(id);
 
         if (room == null)
-        {
-            _logger.LogWarning("Update failed. Room not found with Id: {RoomId}", id);
             throw new KeyNotFoundException("Room not found");
-        }
 
         room.RoomType = dto.RoomType;
         room.Price = dto.Price;
@@ -100,31 +97,38 @@ public class RoomService : IRoomService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Room updated successfully with Id: {RoomId}", id);
+        return new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        };
+    }
+    public async Task<IEnumerable<RoomResponseDto>> GetAll()
+    {
+        var rooms = await _context.Rooms.ToListAsync();
 
-        return room;
+        return rooms.Select(r => new RoomResponseDto
+        {
+            Id = r.Id,
+            RoomType = r.RoomType,
+            Price = r.Price,
+            Capacity = r.Capacity,
+            IsAvailable = r.IsAvailable
+        });
     }
 
+    // ✅ Delete
     public async Task Delete(int id)
     {
-        _logger.LogInformation("Deleting room with Id: {RoomId}", id);
-
         var room = await _context.Rooms.FindAsync(id);
 
         if (room == null)
-        {
-            _logger.LogWarning("Delete failed. Room not found with Id: {RoomId}", id);
             throw new KeyNotFoundException("Room not found");
-        }
 
         _context.Rooms.Remove(room);
         await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Room deleted successfully with Id: {RoomId}", id);
-    }
-
-    Task<IEnumerable<Room>> IRoomService.GetByHotel(int hotelId)
-    {
-        throw new NotImplementedException();
     }
 }
