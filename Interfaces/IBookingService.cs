@@ -1,12 +1,15 @@
 using HotelBookingAPI.DTOs;
 
-public interface IBookingService
+namespace HotelBookingAPI.Interfaces
 {
-    Task<BookingResponseDto> CreateBookingAsync(int userId, BookingDto dto);
+    public interface IBookingService
+    {
+        Task<BookingResponseDto> CreateBookingAsync(int userId, BookingDto dto);
 
-    Task<IEnumerable<BookingResponseDto>> GetUserBookingsAsync(int userId);
+        Task<IEnumerable<BookingResponseDto>> GetUserBookingsAsync(int userId);
 
-    Task<bool> UpdateBookingStatusAsync(BookingStatusDto dto);
+        Task<bool> UpdateBookingStatusAsync(BookingStatusDto dto);
 
-    Task<IEnumerable<BookingResponseDto>> GetAllBookingsAsync();
+        Task<IEnumerable<BookingResponseDto>> GetAllBookingsAsync();
+    }
 }

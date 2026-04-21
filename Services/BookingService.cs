@@ -1,5 +1,6 @@
 ﻿using HotelBookingAPI.Data;
 using HotelBookingAPI.DTOs;
+using HotelBookingAPI.Interfaces;
 using HotelBookingAPI.Models;
 
 using Microsoft.EntityFrameworkCore;

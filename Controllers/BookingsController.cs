@@ -1,4 +1,5 @@
 using HotelBookingAPI.DTOs;
+using HotelBookingAPI.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -58,7 +59,6 @@ namespace HotelBookingAPI.Controllers
 
             return Ok(new { message = "Booking status updated successfully" });
         }
-
 
     }
 }
