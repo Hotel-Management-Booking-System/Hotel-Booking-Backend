@@ -1,3 +1,6 @@
+using HotelBookingWebsite.DTOs;
+using HotelBookingWebsite.Models;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -86,4 +89,18 @@ public class HotelsController : ControllerBase
     {
         return Ok(await _service.Search(city, minPrice, maxPrice, amenityIds));
     }
+
+
+    [HttpPost("amenity")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddAmenity([FromBody] AmenityDto dto)
+    {
+        var amenity = await _service.AddAmenityAsync(dto.Name);
+        return Ok(amenity);
+    }
+
+
+
+
+
 }

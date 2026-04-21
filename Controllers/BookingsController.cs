@@ -60,6 +60,5 @@ namespace HotelBookingAPI.Controllers
             return Ok(new { message = "Booking status updated successfully" });
         }
 
-
     }
 }

@@ -1,4 +1,5 @@
 using HotelBookingAPI.Data;
+using HotelBookingWebsite.DTOs;
 using HotelBookingWebsite.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ public class RoomService : IRoomService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<Room>> GetByHotel(int hotelId)
+    public async Task<IEnumerable<RoomResponseDto>> GetByHotel(int hotelId)
     {
         _logger.LogInformation("Fetching rooms for HotelId: {HotelId}", hotelId);
 
@@ -24,7 +25,14 @@ public class RoomService : IRoomService
 
         _logger.LogInformation("Fetched {Count} rooms for HotelId: {HotelId}", rooms.Count, hotelId);
 
-        return rooms;
+        return rooms.Select(room => new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        });
     }
 
     public async Task<Room> GetById(int id)
@@ -113,5 +121,10 @@ public class RoomService : IRoomService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Room deleted successfully with Id: {RoomId}", id);
+    }
+
+    Task<IEnumerable<Room>> IRoomService.GetByHotel(int hotelId)
+    {
+        throw new NotImplementedException();
     }
 }

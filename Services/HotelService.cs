@@ -1,4 +1,5 @@
-using HotelBookingAPI.Data;
+﻿using HotelBookingAPI.Data;
+using HotelBookingWebsite.DTOs;
 using HotelBookingWebsite.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ public class HotelService : IHotelService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<Hotel>> GetAll()
+    public async Task<IEnumerable<HotelResponseDto>> GetAll()
     {
         _logger.LogInformation("Fetching all hotels");
 
@@ -24,7 +25,15 @@ public class HotelService : IHotelService
 
         _logger.LogInformation("Fetched {Count} hotels", hotels.Count);
 
-        return hotels;
+        return hotels.Select(h => new HotelResponseDto
+        {
+            Id = h.Id,
+            Name = h.Name,
+            City = h.City,
+            Country = h.Country,
+            Amenities = h.Amenities.Select(a => a.Name).ToList()
+
+        });
     }
 
     public async Task<Hotel> GetById(int id)
@@ -122,6 +131,38 @@ public class HotelService : IHotelService
         _logger.LogInformation("Hotel deleted successfully with Id: {HotelId}", id);
     }
 
+    public async Task<Amenity> AddAmenityAsync(string name)
+    {
+        _logger.LogInformation("Adding new amenity: {AmenityName}", name);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Amenity name is empty");
+            throw new ArgumentException("Amenity name cannot be empty");
+        }
+        // 🔹 Check duplicate
+        var exists = await _context.Amenities
+            .AnyAsync(a => a.Name.ToLower() == name.ToLower());
+
+        if (exists)
+        {
+            _logger.LogWarning("Amenity already exists: {AmenityName}", name);
+            throw new InvalidOperationException("Amenity already exists");
+        }
+
+        var amenity = new Amenity
+        {
+            Name = name
+        };
+
+        await _context.Amenities.AddAsync(amenity);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Amenity added successfully with Id {AmenityId}", amenity.Id);
+
+        return amenity;
+    }
+
     public async Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds)
     {
         _logger.LogInformation(
@@ -152,4 +193,6 @@ public class HotelService : IHotelService
 
         return result;
     }
+
+
 }
