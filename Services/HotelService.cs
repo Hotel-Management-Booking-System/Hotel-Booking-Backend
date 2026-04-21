@@ -1,38 +1,54 @@
 using HotelBookingAPI.Data;
 using HotelBookingWebsite.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 public class HotelService : IHotelService
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<HotelService> _logger;
 
-    public HotelService(AppDbContext context)
+    public HotelService(AppDbContext context, ILogger<HotelService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<Hotel>> GetAll()
     {
-        return await _context.Hotels
+        _logger.LogInformation("Fetching all hotels");
+
+        var hotels = await _context.Hotels
             .Include(h => h.Amenities)
             .ToListAsync();
+
+        _logger.LogInformation("Fetched {Count} hotels", hotels.Count);
+
+        return hotels;
     }
 
     public async Task<Hotel> GetById(int id)
     {
+        _logger.LogInformation("Fetching hotel with Id: {HotelId}", id);
+
         var hotel = await _context.Hotels
             .Include(h => h.Rooms)
             .Include(h => h.Amenities)
             .FirstOrDefaultAsync(h => h.Id == id);
 
         if (hotel == null)
+        {
+            _logger.LogWarning("Hotel not found with Id: {HotelId}", id);
             throw new KeyNotFoundException("Hotel not found");
+        }
 
         return hotel;
     }
 
     public async Task<Hotel> Create(HotelDto dto)
     {
+        _logger.LogInformation("Creating hotel: {HotelName}", dto.Name);
+
         var amenities = await _context.Amenities
             .Where(a => dto.AmenityIds.Contains(a.Id))
             .ToListAsync();
@@ -51,17 +67,24 @@ public class HotelService : IHotelService
         _context.Hotels.Add(hotel);
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("Hotel created successfully with Id: {HotelId}", hotel.Id);
+
         return hotel;
     }
 
     public async Task<Hotel> Update(int id, HotelDto dto)
     {
+        _logger.LogInformation("Updating hotel with Id: {HotelId}", id);
+
         var hotel = await _context.Hotels
             .Include(h => h.Amenities)
             .FirstOrDefaultAsync(h => h.Id == id);
 
         if (hotel == null)
+        {
+            _logger.LogWarning("Update failed. Hotel not found with Id: {HotelId}", id);
             throw new KeyNotFoundException("Hotel not found");
+        }
 
         hotel.Name = dto.Name;
         hotel.Location = dto.Location;
@@ -75,21 +98,37 @@ public class HotelService : IHotelService
             .ToListAsync();
 
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Hotel updated successfully with Id: {HotelId}", id);
+
         return hotel;
     }
 
     public async Task Delete(int id)
     {
+        _logger.LogInformation("Deleting hotel with Id: {HotelId}", id);
+
         var hotel = await _context.Hotels.FindAsync(id);
+
         if (hotel == null)
+        {
+            _logger.LogWarning("Delete failed. Hotel not found with Id: {HotelId}", id);
             throw new KeyNotFoundException("Hotel not found");
+        }
 
         _context.Hotels.Remove(hotel);
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Hotel deleted successfully with Id: {HotelId}", id);
     }
 
     public async Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds)
     {
+        _logger.LogInformation(
+            "Searching hotels with filters - City: {City}, MinPrice: {MinPrice}, MaxPrice: {MaxPrice}, Amenities: {AmenitiesCount}",
+            city, minPrice, maxPrice, amenityIds?.Count ?? 0
+        );
+
         var query = _context.Hotels
             .Include(h => h.Rooms)
             .Include(h => h.Amenities)
@@ -107,6 +146,10 @@ public class HotelService : IHotelService
         if (amenityIds != null && amenityIds.Any())
             query = query.Where(h => h.Amenities.Any(a => amenityIds.Contains(a.Id)));
 
-        return await query.ToListAsync();
+        var result = await query.ToListAsync();
+
+        _logger.LogInformation("Search returned {Count} hotels", result.Count);
+
+        return result;
     }
 }
