@@ -48,6 +48,9 @@ namespace Hotel_Booking_System
             builder.Services.AddControllers();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IJwtService, JwtService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
+            builder.Services.AddScoped<IHotelService, HotelService>();
+            builder.Services.AddScoped<IRoomService, RoomService>();
             builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
             ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
