@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using HotelBookingAPI.Models;
+using HotelBookingWebsite.Models;
 
 namespace HotelBookingAPI.Data
 {
