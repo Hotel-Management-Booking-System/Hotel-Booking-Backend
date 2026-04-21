@@ -27,7 +27,7 @@ namespace HotelBookingAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
+        [HttpGet("my-bookings")]
 
         public async Task<IActionResult> GetUserBookings()
         {
@@ -37,7 +37,7 @@ namespace HotelBookingAPI.Controllers
             return Ok(bookings);
 
         }
-        [HttpGet]
+        [HttpGet("all")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBookings()
         {

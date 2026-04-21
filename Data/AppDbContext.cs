@@ -29,5 +29,7 @@ namespace HotelBookingAPI.Data
         // 🧰 Amenities
         public DbSet<Amenity> Amenities { get; set; }
 
+
+
         }
     }
