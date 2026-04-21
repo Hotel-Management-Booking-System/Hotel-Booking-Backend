@@ -1,0 +1,9 @@
+ #visual studio
+.vs/
+#Build folders
+bin/
+obj/
+#Angular
+node-modules/
+dist/
+appsettings.json 
