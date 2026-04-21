@@ -123,8 +123,5 @@ public class RoomService : IRoomService
         _logger.LogInformation("Room deleted successfully with Id: {RoomId}", id);
     }
 
-    Task<IEnumerable<Room>> IRoomService.GetByHotel(int hotelId)
-    {
-        throw new NotImplementedException();
-    }
+
 }
