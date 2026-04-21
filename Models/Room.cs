@@ -1,4 +1,6 @@
-﻿namespace HotelBookingWebsite.Models
+﻿using HotelBookingAPI.Models;
+
+namespace HotelBookingWebsite.Models
 {
    public class Room
     {
