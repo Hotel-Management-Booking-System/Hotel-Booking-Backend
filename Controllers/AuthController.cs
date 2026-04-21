@@ -35,6 +35,6 @@ public class AuthController : ControllerBase
             return BadRequest("User already exists");
         }
 
-        return Ok(response);
+        return Ok(new { message = response });
     }
 }
