@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -19,6 +19,14 @@ public class RoomsController : ControllerBase
     public async Task<IActionResult> GetByHotel(int hotelId)
     {
         return Ok(await _service.GetByHotel(hotelId));
+    }
+
+    // ✅ Admin: Get all rooms
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllRooms()
+    {
+        return Ok(await _service.GetAll());
     }
 
     // Admin + Customer
