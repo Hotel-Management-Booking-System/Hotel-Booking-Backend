@@ -12,4 +12,5 @@ public interface IHotelService
     Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds);
 
     Task<Amenity> AddAmenityAsync(string name);
+    Task<IEnumerable<Amenity>> GetAllAmenitiesAsync();
 }

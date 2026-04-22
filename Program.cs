@@ -1,6 +1,8 @@
 
 using HotelBookingAPI.Data;
 using HotelBookingAPI.Interfaces;
+using HotelBookingAPI.Models;
+using HotelBookingAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -56,6 +58,8 @@ namespace Hotel_Booking_System
             builder.Services.AddScoped<IBookingService, BookingService>();
             builder.Services.AddScoped<IHotelService, HotelService>();
             builder.Services.AddScoped<IRoomService, RoomService>();
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
             ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))

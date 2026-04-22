@@ -120,7 +120,6 @@ public class RoomService : IRoomService
         });
     }
 
-    // ✅ Delete
     public async Task Delete(int id)
     {
         var room = await _context.Rooms.FindAsync(id);
@@ -130,13 +129,12 @@ public class RoomService : IRoomService
 
         _context.Rooms.Remove(room);
         await _context.SaveChangesAsync();
-<<<<<<< HEAD
+
 
         _logger.LogInformation("Room deleted successfully with Id: {RoomId}", id);
     }
 
 
-=======
+
     }
->>>>>>> dev
-}
+
