@@ -18,7 +18,7 @@ public class HotelsController : ControllerBase
 
     //  Admin + Customer
     [HttpGet]
-    [Authorize(Roles = "Admin,Customer")]
+   
     public async Task<IActionResult> GetAll()
     {
         return Ok(await _service.GetAll());
@@ -26,7 +26,7 @@ public class HotelsController : ControllerBase
 
     //  Admin + Customer
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Customer")]
+  
     public async Task<IActionResult> Get(int id)
     {
         try
@@ -98,7 +98,13 @@ public class HotelsController : ControllerBase
         var amenity = await _service.AddAmenityAsync(dto.Name);
         return Ok(amenity);
     }
-
+    [HttpGet("amenity")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAmenities()
+    {
+        var amenities = await _service.GetAllAmenitiesAsync();
+        return Ok(amenities);
+    }
 
 
 

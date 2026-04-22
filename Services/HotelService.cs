@@ -162,6 +162,12 @@ public class HotelService : IHotelService
 
         return amenity;
     }
+    public async Task<IEnumerable<Amenity>> GetAllAmenitiesAsync()
+    {
+        _logger.LogInformation("Fetching all amenities");
+        return await _context.Amenities.ToListAsync();
+    }
+
 
     public async Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds)
     {
