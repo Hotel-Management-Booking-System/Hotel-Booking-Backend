@@ -130,13 +130,11 @@ public class RoomService : IRoomService
 
         _context.Rooms.Remove(room);
         await _context.SaveChangesAsync();
-<<<<<<< HEAD
+
 
         _logger.LogInformation("Room deleted successfully with Id: {RoomId}", id);
     }
 
-
-=======
     }
->>>>>>> dev
+
 }

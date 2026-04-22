@@ -36,8 +36,9 @@ namespace HotelBookingAPI.Controllers
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var bookings = await _bookingService.GetUserBookingsAsync(userId);
             return Ok(bookings);
-
         }
+
+
         [HttpGet("all")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBookings()
