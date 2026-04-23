@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HotelBookingWebsite.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260421060112_Init")]
-    partial class Init
+    [Migration("20260423042055_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -166,6 +166,10 @@ namespace HotelBookingWebsite.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -177,6 +181,13 @@ namespace HotelBookingWebsite.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("StarRating")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -194,6 +205,10 @@ namespace HotelBookingWebsite.Migrations
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<int>("HotelId")
                         .HasColumnType("int");
 
@@ -206,6 +221,10 @@ namespace HotelBookingWebsite.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("RoomNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("RoomType")
                         .IsRequired()
@@ -270,7 +289,7 @@ namespace HotelBookingWebsite.Migrations
 
             modelBuilder.Entity("HotelBookingAPI.Models.Booking", b =>
                 {
-                    b.HasOne("HotelBookingAPI.Models.Promotion", null)
+                    b.HasOne("HotelBookingAPI.Models.Promotion", "Promotion")
                         .WithMany("Bookings")
                         .HasForeignKey("PromotionId");
 
@@ -285,6 +304,8 @@ namespace HotelBookingWebsite.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Promotion");
 
                     b.Navigation("Room");
 

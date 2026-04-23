@@ -1,4 +1,4 @@
-﻿using HotelBookingWebsite.Models;
+using HotelBookingWebsite.Models;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -40,7 +40,11 @@ namespace HotelBookingAPI.Models
         // 📊 Booking Status
         [Required]
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
-        // Suggested: Pending, Confirmed, Cancelled
+
+        // 🎁 Promotion
+        public int? PromotionId { get; set; }
+        public Promotion Promotion { get; set; }
+
         // 📅 Created Date
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

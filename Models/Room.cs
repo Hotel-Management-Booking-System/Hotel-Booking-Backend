@@ -1,4 +1,4 @@
-﻿using HotelBookingAPI.Models;
+using HotelBookingAPI.Models;
 
 namespace HotelBookingWebsite.Models
 {
@@ -7,9 +7,11 @@ namespace HotelBookingWebsite.Models
         public int Id { get; set; }
         public int HotelId { get; set; }
 
+        public string RoomNumber { get; set; }
         public string RoomType { get; set; }
         public decimal Price { get; set; }
         public int Capacity { get; set; }
+        public string Description { get; set; }
         public bool IsAvailable { get; set; }
 
         public string ImageUrl { get; set; } = string.Empty; 
