@@ -4,12 +4,12 @@ using HotelBookingWebsite.Models;
 public interface IHotelService
 {
     Task<IEnumerable<HotelResponseDto>> GetAll();
-    Task<Hotel> GetById(int id);
-    Task<Hotel> Create(HotelDto dto);
-    Task<Hotel> Update(int id, HotelDto dto);
+    Task<HotelResponseDto> GetById(int id);
+    Task<HotelResponseDto> Create(HotelDto dto);
+    Task<HotelResponseDto> Update(int id, HotelDto dto);
     Task Delete(int id);
 
-    Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds);
+    Task<IEnumerable<HotelResponseDto>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds);
 
     Task<Amenity> AddAmenityAsync(string name);
     Task<IEnumerable<Amenity>> GetAllAmenitiesAsync();

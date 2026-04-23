@@ -16,5 +16,7 @@ namespace HotelBookingAPI.DTOs
 
         [Required]
         public int NumberOfGuests { get; set; }
+
+        public string? PromotionCode { get; set; }
     }
 }

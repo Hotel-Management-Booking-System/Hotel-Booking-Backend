@@ -1,4 +1,4 @@
-﻿using HotelBookingAPI.Data;
+using HotelBookingAPI.Data;
 using HotelBookingAPI.DTOs;
 using HotelBookingAPI.Interfaces;
 using HotelBookingAPI.Models;
@@ -60,6 +60,28 @@ public class BookingService : IBookingService
         int totalNights = (dto.CheckOutDate - dto.CheckInDate).Days;
         decimal totalPrice = totalNights * room.Price;
 
+        Promotion? promotion = null;
+        if (!string.IsNullOrEmpty(dto.PromotionCode))
+        {
+            promotion = await _context.Promotions
+                .FirstOrDefaultAsync(p => p.Code == dto.PromotionCode && p.IsActive && 
+                                         DateTime.UtcNow >= p.StartDate && DateTime.UtcNow <= p.EndDate);
+            
+            if (promotion != null)
+            {
+                if (promotion.DiscountPercentage > 0)
+                {
+                    totalPrice -= totalPrice * (promotion.DiscountPercentage / 100);
+                }
+                else if (promotion.FlatDiscountAmount.HasValue)
+                {
+                    totalPrice -= promotion.FlatDiscountAmount.Value;
+                }
+                
+                promotion.TimesUsed++;
+            }
+        }
+
         var booking = new Booking
         {
             UserId = userId,
@@ -67,8 +89,9 @@ public class BookingService : IBookingService
             CheckInDate = dto.CheckInDate,
             CheckOutDate = dto.CheckOutDate,
             NumberOfGuests = dto.NumberOfGuests,
-            TotalPrice = totalPrice,
+            TotalPrice = totalPrice < 0 ? 0 : totalPrice,
             Status = BookingStatus.Confirmed,
+            PromotionId = promotion?.PromotionId,
             CreatedAt = DateTime.UtcNow
         };
 

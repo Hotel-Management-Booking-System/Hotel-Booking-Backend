@@ -1,4 +1,5 @@
-﻿using HotelBookingAPI.Data;
+using HotelBookingAPI.Data;
+using HotelBookingAPI.Models;
 using HotelBookingWebsite.DTOs;
 using HotelBookingWebsite.Models;
 using Microsoft.EntityFrameworkCore;
@@ -29,14 +30,19 @@ public class HotelService : IHotelService
         {
             Id = h.Id,
             Name = h.Name,
+            Description = h.Description,
+            Location = h.Location,
             City = h.City,
             Country = h.Country,
+            StarRating = h.StarRating,
+            PhoneNumber = h.PhoneNumber,
+            Email = h.Email,
+            ImageUrl = h.ImageUrl,
             Amenities = h.Amenities.Select(a => a.Name).ToList()
-
         });
     }
 
-    public async Task<Hotel> GetById(int id)
+    public async Task<HotelResponseDto> GetById(int id)
     {
         _logger.LogInformation("Fetching hotel with Id: {HotelId}", id);
 
@@ -51,10 +57,23 @@ public class HotelService : IHotelService
             throw new KeyNotFoundException("Hotel not found");
         }
 
-        return hotel;
+        return new HotelResponseDto
+        {
+            Id = hotel.Id,
+            Name = hotel.Name,
+            Description = hotel.Description,
+            Location = hotel.Location,
+            City = hotel.City,
+            Country = hotel.Country,
+            StarRating = hotel.StarRating,
+            PhoneNumber = hotel.PhoneNumber,
+            Email = hotel.Email,
+            ImageUrl = hotel.ImageUrl,
+            Amenities = hotel.Amenities.Select(a => a.Name).ToList()
+        };
     }
 
-    public async Task<Hotel> Create(HotelDto dto)
+    public async Task<HotelResponseDto> Create(HotelDto dto)
     {
         _logger.LogInformation("Creating hotel: {HotelName}", dto.Name);
 
@@ -69,6 +88,9 @@ public class HotelService : IHotelService
             City = dto.City,
             Country = dto.Country,
             Description = dto.Description,
+            StarRating = dto.StarRating,
+            PhoneNumber = dto.PhoneNumber,
+            Email = dto.Email,
             ImageUrl = dto.ImageUrl,
             Amenities = amenities
         };
@@ -78,10 +100,23 @@ public class HotelService : IHotelService
 
         _logger.LogInformation("Hotel created successfully with Id: {HotelId}", hotel.Id);
 
-        return hotel;
+        return new HotelResponseDto
+        {
+            Id = hotel.Id,
+            Name = hotel.Name,
+            Description = hotel.Description,
+            Location = hotel.Location,
+            City = hotel.City,
+            Country = hotel.Country,
+            StarRating = hotel.StarRating,
+            PhoneNumber = hotel.PhoneNumber,
+            Email = hotel.Email,
+            ImageUrl = hotel.ImageUrl,
+            Amenities = hotel.Amenities.Select(a => a.Name).ToList()
+        };
     }
 
-    public async Task<Hotel> Update(int id, HotelDto dto)
+    public async Task<HotelResponseDto> Update(int id, HotelDto dto)
     {
         _logger.LogInformation("Updating hotel with Id: {HotelId}", id);
 
@@ -100,6 +135,9 @@ public class HotelService : IHotelService
         hotel.City = dto.City;
         hotel.Country = dto.Country;
         hotel.Description = dto.Description;
+        hotel.StarRating = dto.StarRating;
+        hotel.PhoneNumber = dto.PhoneNumber;
+        hotel.Email = dto.Email;
         hotel.ImageUrl = dto.ImageUrl;
 
         hotel.Amenities = await _context.Amenities
@@ -110,19 +148,40 @@ public class HotelService : IHotelService
 
         _logger.LogInformation("Hotel updated successfully with Id: {HotelId}", id);
 
-        return hotel;
+        return new HotelResponseDto
+        {
+            Id = hotel.Id,
+            Name = hotel.Name,
+            Description = hotel.Description,
+            Location = hotel.Location,
+            City = hotel.City,
+            Country = hotel.Country,
+            StarRating = hotel.StarRating,
+            PhoneNumber = hotel.PhoneNumber,
+            Email = hotel.Email,
+            ImageUrl = hotel.ImageUrl,
+            Amenities = hotel.Amenities.Select(a => a.Name).ToList()
+        };
     }
 
     public async Task Delete(int id)
     {
         _logger.LogInformation("Deleting hotel with Id: {HotelId}", id);
 
-        var hotel = await _context.Hotels.FindAsync(id);
+        var hotel = await _context.Hotels.Include(h => h.Rooms).FirstOrDefaultAsync(h => h.Id == id);
 
         if (hotel == null)
         {
             _logger.LogWarning("Delete failed. Hotel not found with Id: {HotelId}", id);
             throw new KeyNotFoundException("Hotel not found");
+        }
+
+        // Check for active bookings in any of the hotel's rooms
+        bool hasActiveBookings = await _context.Bookings.AnyAsync(b => b.Room.HotelId == id && b.Status != BookingStatus.Cancelled);
+        if (hasActiveBookings)
+        {
+            _logger.LogWarning("Delete failed. Hotel {HotelId} has active bookings.", id);
+            throw new InvalidOperationException("Cannot delete hotel with active bookings.");
         }
 
         _context.Hotels.Remove(hotel);
@@ -169,7 +228,7 @@ public class HotelService : IHotelService
     }
 
 
-    public async Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds)
+    public async Task<IEnumerable<HotelResponseDto>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds)
     {
         _logger.LogInformation(
             "Searching hotels with filters - City: {City}, MinPrice: {MinPrice}, MaxPrice: {MaxPrice}, Amenities: {AmenitiesCount}",
@@ -193,12 +252,24 @@ public class HotelService : IHotelService
         if (amenityIds != null && amenityIds.Any())
             query = query.Where(h => h.Amenities.Any(a => amenityIds.Contains(a.Id)));
 
-        var result = await query.ToListAsync();
+        var filteredHotels = await query.ToListAsync();
 
-        _logger.LogInformation("Search returned {Count} hotels", result.Count);
+        _logger.LogInformation("Search returned {Count} hotels", filteredHotels.Count);
 
-        return result;
+        return filteredHotels.Select(h => new HotelResponseDto
+        {
+            Id = h.Id,
+            Name = h.Name,
+            Description = h.Description,
+            Location = h.Location,
+            City = h.City,
+            Country = h.Country,
+            StarRating = h.StarRating,
+            PhoneNumber = h.PhoneNumber,
+            Email = h.Email,
+            ImageUrl = h.ImageUrl,
+            Amenities = h.Amenities.Select(a => a.Name).ToList()
+        });
     }
-
 
 }
