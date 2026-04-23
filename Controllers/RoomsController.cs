@@ -57,6 +57,10 @@ public class RoomsController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);          // Room already exists
+        }
     }
 
     //  ONLY Admin

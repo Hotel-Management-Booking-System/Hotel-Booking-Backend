@@ -64,6 +64,14 @@ public class RoomService : IRoomService
 
         if (!hotelExists)
             throw new ArgumentException("Invalid HotelId");
+        // ✅ Check if room number already exists in the same hotel
+        var roomExists = await _context.Rooms
+            .AnyAsync(r => r.HotelId == dto.HotelId && r.RoomNumber == dto.RoomNumber);
+
+        if (roomExists)
+            throw new InvalidOperationException($"Room number '{dto.RoomNumber}' already exists in this hotel.");
+
+
 
         var room = new Room
         {
