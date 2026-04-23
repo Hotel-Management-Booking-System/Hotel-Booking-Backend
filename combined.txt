@@ -1,0 +1,1649 @@
+﻿
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\Amenity.cs ====================
+
+namespace HotelBookingWebsite.Models
+{
+    public class Amenity
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public ICollection<Hotel> Hotels { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\Booking.cs ====================
+
+using HotelBookingWebsite.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace HotelBookingAPI.Models
+{
+    public enum BookingStatus
+    {
+        Pending,
+        Confirmed,
+        Cancelled
+    }
+    public class Booking
+    {
+        [Key]
+        public int BookingId { get; set; }
+        // 👤 User who booked
+        [Required]
+        public int UserId { get; set; }
+        public User User { get; set; }
+
+        // 🏨 Room booked
+        [Required]
+        public int RoomId { get; set; }
+        public Room Room { get; set; }
+
+        // 📅 Booking Dates
+        [Required]
+        public DateTime CheckInDate { get; set; }
+        [Required]
+        public DateTime CheckOutDate { get; set; }
+        // 👥 Guests
+        [Required]
+        public int NumberOfGuests { get; set; }
+        // 💰 Pricing
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal TotalPrice { get; set; }
+
+        // 📊 Booking Status
+        [Required]
+        public BookingStatus Status { get; set; } = BookingStatus.Pending;
+        // Suggested: Pending, Confirmed, Cancelled
+        // 📅 Created Date
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\EmailSettings.cs ====================
+
+namespace HotelBookingAPI.Models
+{
+    public class EmailSettings
+    {
+        public string SmtpHost { get; set; }
+        public int SmtpPort { get; set; }
+        public string SenderEmail { get; set; }
+        public string SenderName { get; set; }
+        public string AppPassword { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\Hotel.cs ====================
+
+namespace HotelBookingWebsite.Models
+{
+    public class Hotel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+
+        public string Location { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+
+        public string Description { get; set; }
+
+        public string ImageUrl { get; set; } = string.Empty; 
+
+        public ICollection<Room> Rooms { get; set; }
+        public ICollection<Amenity> Amenities { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\Promotion.cs ====================
+
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+
+namespace HotelBookingAPI.Models
+{
+    public class Promotion
+    {
+        [Key]
+        public int PromotionId { get; set; }
+
+        // 🏷️ Promo Code (e.g., SUMMER20)
+        [Required]
+        [MaxLength(50)]
+        public string Code { get; set; }
+        // 📝 Description
+        public string Description { get; set; }
+        // 💰 Discount Percentage (e.g., 10, 20)
+        [Range(0, 100)]
+        public decimal DiscountPercentage { get; set; }
+        // 💸 OR Flat Discount Amount (optional)
+        public decimal? FlatDiscountAmount { get; set; }
+        // 📅 Validity
+        [Required]
+        public DateTime StartDate { get; set; }
+        [Required]
+        public DateTime EndDate { get; set; }
+        // 🔢 Usage Limit (optional)
+        public int? UsageLimit { get; set; }
+        public int TimesUsed { get; set; } = 0;
+        // 🟢 Active or not
+        public bool IsActive { get; set; } = true;
+        // 🔗 Navigation (Bookings using this promo)
+        public ICollection<Booking> Bookings { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\Room.cs ====================
+
+using HotelBookingAPI.Models;
+
+namespace HotelBookingWebsite.Models
+{
+   public class Room
+    {
+        public int Id { get; set; }
+        public int HotelId { get; set; }
+
+        public string RoomType { get; set; }
+        public decimal Price { get; set; }
+        public int Capacity { get; set; }
+        public bool IsAvailable { get; set; }
+
+        public string ImageUrl { get; set; } = string.Empty; 
+
+        public Hotel Hotel { get; set; }
+        public ICollection<Booking> Bookings { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Models\User.cs ====================
+
+using HotelBookingWebsite.Enum;
+using System.ComponentModel.DataAnnotations;
+
+public class User
+{
+    [Key]
+    public int UserId { get; set; }
+
+    [Required]
+    [StringLength(100)]
+    public string FullName { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    [StringLength(100)]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [Phone]
+    [StringLength(20)]
+    public string Phone { get; set; } = string.Empty;
+
+    [Required]
+    public string PasswordHash { get; set; } = string.Empty;
+
+    [Required]
+    public UserRole Role { get; set; } = UserRole.Customer;
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Controllers\AuthController.cs ====================
+
+using Microsoft.AspNetCore.Mvc;
+
+[Route("api/[controller]")]
+[ApiController]
+public class AuthController : ControllerBase
+{
+    private readonly IAuthService _authService;
+    public AuthController(IAuthService authService)
+    {
+        _authService = authService;
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponseDto>> Login(LoginDto dto)
+    {
+        var response = await _authService.Login(dto);
+
+        // if null invalid credentials 
+        if (response is null)
+        {
+            return BadRequest("Invalid credentials");
+        }
+
+        return Ok(response);
+    }
+
+    [HttpPost("register")]
+    public async Task<ActionResult<string>> Register(RegisterDto dto)
+    {
+        var response = await _authService.Register(dto);
+
+        // if null then user already exists
+        if (response is null)
+        {
+            return BadRequest("User already exists");
+        }
+
+        return Ok(new { message = response });
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Controllers\BookingsController.cs ====================
+
+using HotelBookingAPI.DTOs;
+using HotelBookingAPI.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace HotelBookingAPI.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class BookingsController : ControllerBase
+    {
+        private readonly IBookingService _bookingService;
+        private readonly ILogger<BookingsController> _logger;
+        public BookingsController(IBookingService bookingService, ILogger<BookingsController> logger)
+        {
+            _bookingService = bookingService;
+            _logger = logger;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateBooking([FromBody] BookingDto dto)
+        {
+            _logger.LogInformation("CreateBooking API called");
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var result = await _bookingService.CreateBookingAsync(userId, dto);
+            return Ok(result);
+        }
+
+        [HttpGet("my-bookings")]
+
+        public async Task<IActionResult> GetUserBookings()
+        {
+            _logger.LogInformation("Fetching bookings for user");
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var bookings = await _bookingService.GetUserBookingsAsync(userId);
+            return Ok(bookings);
+        }
+
+
+        [HttpGet("all")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllBookings()
+        {
+            _logger.LogInformation("Admin fetching all bookings");
+
+            var bookings = await _bookingService.GetAllBookingsAsync();
+
+            return Ok(bookings);
+        }
+
+        [HttpPut("status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateBookingStatus([FromBody] BookingStatusDto dto)
+        {
+            _logger.LogInformation("Updating booking status");
+
+            var result = await _bookingService.UpdateBookingStatusAsync(dto);
+
+            return Ok(new { message = "Booking status updated successfully" });
+        }
+
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Controllers\HotelsController.cs ====================
+
+using HotelBookingWebsite.DTOs;
+using HotelBookingWebsite.Models;
+using Humanizer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize] //All endpoints require authentication
+public class HotelsController : ControllerBase
+{
+    private readonly IHotelService _service;
+
+    public HotelsController(IHotelService service)
+    {
+        _service = service;
+    }
+
+    //  Admin + Customer
+    [HttpGet]
+   
+    public async Task<IActionResult> GetAll()
+    {
+        return Ok(await _service.GetAll());
+    }
+
+    //  Admin + Customer
+    [HttpGet("{id}")]
+  
+    public async Task<IActionResult> Get(int id)
+    {
+        try
+        {
+            return Ok(await _service.GetById(id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    //  ONLY Admin
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create(HotelDto dto)
+    {
+        return Ok(await _service.Create(dto));
+    }
+
+    //  ONLY Admin
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(int id, HotelDto dto)
+    {
+        try
+        {
+            return Ok(await _service.Update(id, dto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    // ONLY Admin
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            await _service.Delete(id);
+            return Ok("Deleted successfully");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    //  Admin + Customer
+    [HttpGet("search")]
+    [Authorize(Roles = "Admin,Customer")]
+    public async Task<IActionResult> Search(
+        string? city,
+        decimal? minPrice,
+        decimal? maxPrice,
+        [FromQuery] List<int>? amenityIds)
+    {
+        return Ok(await _service.Search(city, minPrice, maxPrice, amenityIds));
+    }
+
+
+    [HttpPost("amenity")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddAmenity([FromBody] AmenityDto dto)
+    {
+        var amenity = await _service.AddAmenityAsync(dto.Name);
+        return Ok(amenity);
+    }
+    [HttpGet("amenity")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllAmenities()
+    {
+        var amenities = await _service.GetAllAmenitiesAsync();
+        return Ok(amenities);
+    }
+
+
+
+
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Controllers\RoomsController.cs ====================
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize] // all endpoints require login
+public class RoomsController : ControllerBase
+{
+    private readonly IRoomService _service;
+
+    public RoomsController(IRoomService service)
+    {
+        _service = service;
+    }
+
+    //  Admin + Customer
+    [HttpGet("hotel/{hotelId}")]
+    [Authorize(Roles = "Admin,Customer")]
+    public async Task<IActionResult> GetByHotel(int hotelId)
+    {
+        return Ok(await _service.GetByHotel(hotelId));
+    }
+
+    // ✅ Admin: Get all rooms
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllRooms()
+    {
+        return Ok(await _service.GetAll());
+    }
+
+    // Admin + Customer
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,Customer")]
+    public async Task<IActionResult> Get(int id)
+    {
+        try
+        {
+            return Ok(await _service.GetById(id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    // ONLY Admin
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create(RoomDto dto)
+    {
+        try
+        {
+            return Ok(await _service.Create(dto));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    //  ONLY Admin
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(int id, RoomDto dto)
+    {
+        try
+        {
+            return Ok(await _service.Update(id, dto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    //  ONLY Admin
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            await _service.Delete(id);
+            return Ok("Deleted successfully");
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Controllers\WeatherForecastController.cs ====================
+
+using Microsoft.AspNetCore.Mvc;
+
+namespace HotelBookingWebsite.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class WeatherForecastController : ControllerBase
+    {
+        private static readonly string[] Summaries = new[]
+        {
+            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+        };
+
+        private readonly ILogger<WeatherForecastController> _logger;
+
+        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        {
+            _logger = logger;
+        }
+
+        [HttpGet(Name = "GetWeatherForecast")]
+        public IEnumerable<WeatherForecast> Get()
+        {
+            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+            })
+            .ToArray();
+        }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Services\AuthService.cs ====================
+
+using HotelBookingAPI.Data;
+using HotelBookingAPI.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+public class AuthService : IAuthService
+{
+    private readonly AppDbContext _dbContext;
+    private readonly ILogger<AuthService> _logger;
+    private readonly IJwtService _jwtService;
+    private readonly IEmailService _emailService;
+
+    public AuthService(AppDbContext dbContext, ILogger<AuthService> logger, IJwtService jwtService, IEmailService emailService)
+    {
+        _dbContext = dbContext;
+        _logger = logger;
+        _jwtService = jwtService;
+        _emailService = emailService;
+    }
+
+    public async Task<AuthResponseDto?> Login(LoginDto dto)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        var IsValidPassword = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
+        if (!IsValidPassword)
+        {
+            return null;
+        }
+
+        var token = _jwtService.GenerateToken(user);
+        var response = new AuthResponseDto
+        {
+            Token = token,
+            UserId = user.UserId,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role
+        };
+
+        _logger.LogInformation("User {Email} logged in successfully.", user.Email);
+
+        // Send login notification email
+        await _emailService.SendLoginNotificationEmailAsync(user.Email, user.FullName);
+
+        return response;
+    }
+
+    public async Task<string?> Register(RegisterDto dto)
+    {
+        var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+        if (existingUser != null)
+        {
+            return "User registered with this email already exists.";
+        }
+
+        var user = new User
+        {
+            FullName = dto.FullName,
+            Email = dto.Email,
+            Phone = dto.Phone,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+        };
+
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+        _logger.LogInformation("User {Email} registered successfully.", user.Email);
+
+        // Send welcome email
+        await _emailService.SendWelcomeEmailAsync(user.Email, user.FullName);
+
+        return $"User {user.Email} Registered successfully";
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Services\BookingService.cs ====================
+
+using HotelBookingAPI.Data;
+using HotelBookingAPI.DTOs;
+using HotelBookingAPI.Interfaces;
+using HotelBookingAPI.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+public class BookingService : IBookingService
+{
+    private readonly AppDbContext _context;
+    private readonly ILogger<BookingService> _logger;
+    private readonly IEmailService _emailService;
+
+    public BookingService(AppDbContext context, ILogger<BookingService> logger, IEmailService emailService)
+    {
+        _context = context;
+        _logger = logger;
+        _emailService = emailService;
+    }
+
+    public async Task<BookingResponseDto> CreateBookingAsync(int userId, BookingDto dto)
+    {
+        _logger.LogInformation("Creating booking for UserId {UserId}, RoomId {RoomId}", userId, dto.RoomId);
+
+        if (dto.CheckInDate >= dto.CheckOutDate)
+        {
+            _logger.LogWarning("Invalid date range for UserId {UserId}", userId);
+            throw new ArgumentException("Check-out date must be after check-in date.");
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+        if (user == null)
+        {
+            _logger.LogError("Invalid user ID {UserId}", userId);
+            throw new ArgumentException("Invalid user ID");
+        }
+
+        var room = await _context.Rooms
+            .Include(r => r.Hotel)
+            .FirstOrDefaultAsync(r => r.Id == dto.RoomId);
+
+        if (room == null)
+        {
+            _logger.LogError("Invalid room ID {RoomId}", dto.RoomId);
+            throw new ArgumentException("Invalid room ID.");
+        }
+
+        bool isBooked = await _context.Bookings.AnyAsync(b =>
+            b.RoomId == dto.RoomId &&
+            b.Status != BookingStatus.Cancelled &&
+            dto.CheckInDate < b.CheckOutDate &&
+            dto.CheckOutDate > b.CheckInDate);
+
+        if (isBooked)
+        {
+            _logger.LogWarning("Room not available for RoomId {RoomId}", dto.RoomId);
+            throw new InvalidOperationException("Room is not available for the selected dates.");
+        }
+
+        int totalNights = (dto.CheckOutDate - dto.CheckInDate).Days;
+        decimal totalPrice = totalNights * room.Price;
+
+        var booking = new Booking
+        {
+            UserId = userId,
+            RoomId = dto.RoomId,
+            CheckInDate = dto.CheckInDate,
+            CheckOutDate = dto.CheckOutDate,
+            NumberOfGuests = dto.NumberOfGuests,
+            TotalPrice = totalPrice,
+            Status = BookingStatus.Confirmed,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _context.Bookings.AddAsync(booking);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Booking created successfully. BookingId {BookingId}", booking.BookingId);
+
+        // Send booking confirmation email
+        await _emailService.SendBookingConfirmationEmailAsync(user.Email, user.FullName, new BookingConfirmationEmailDto
+        {
+            HotelName = room.Hotel.Name,
+            RoomType = room.RoomType,
+            CheckInDate = booking.CheckInDate,
+            CheckOutDate = booking.CheckOutDate,
+            NumberOfGuests = booking.NumberOfGuests,
+            TotalPrice = booking.TotalPrice
+        });
+
+        return new BookingResponseDto
+        {
+            HotelName = room.Hotel.Name,
+            RoomType = room.RoomType,
+            CheckInDate = booking.CheckInDate,
+            CheckOutDate = booking.CheckOutDate,
+            NumberOfGuests = booking.NumberOfGuests,
+            TotalPrice = booking.TotalPrice,
+            Status = booking.Status.ToString()
+        };
+    }
+
+    // ---- GetAllBookingsAsync, GetUserBookingsAsync, UpdateBookingStatusAsync unchanged ----
+    public async Task<IEnumerable<BookingResponseDto>> GetAllBookingsAsync()
+    {
+        _logger.LogInformation("Retrieving all bookings");
+
+        return await _context.Bookings
+            .Include(b => b.Room)
+                .ThenInclude(r => r.Hotel)
+            .Select(b => new BookingResponseDto
+            {
+                HotelName = b.Room.Hotel.Name,
+                RoomType = b.Room.RoomType,
+                CheckInDate = b.CheckInDate,
+                CheckOutDate = b.CheckOutDate,
+                NumberOfGuests = b.NumberOfGuests,
+                TotalPrice = b.TotalPrice,
+                Status = b.Status.ToString()
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<BookingResponseDto>> GetUserBookingsAsync(int userId)
+    {
+        _logger.LogInformation("Retrieving bookings for UserId {UserId}", userId);
+
+        return await _context.Bookings
+            .Where(b => b.UserId == userId)
+            .Include(b => b.Room)
+                .ThenInclude(r => r.Hotel)
+            .Select(b => new BookingResponseDto
+            {
+                HotelName = b.Room.Hotel.Name,
+                RoomType = b.Room.RoomType,
+                CheckInDate = b.CheckInDate,
+                CheckOutDate = b.CheckOutDate,
+                NumberOfGuests = b.NumberOfGuests,
+                TotalPrice = b.TotalPrice,
+                Status = b.Status.ToString()
+            })
+            .ToListAsync();
+    }
+
+    public async Task<bool> UpdateBookingStatusAsync(BookingStatusDto dto)
+    {
+        _logger.LogInformation("Updating booking status for BookingId {BookingId} to {Status}", dto.BookingId, dto.Status);
+
+        var booking = await _context.Bookings.FindAsync(dto.BookingId);
+
+        if (booking == null)
+        {
+            _logger.LogError("Booking not found for BookingId {BookingId}", dto.BookingId);
+            throw new KeyNotFoundException("Booking not found");
+        }
+
+        if (!Enum.IsDefined(typeof(BookingStatus), dto.Status))
+        {
+            _logger.LogWarning("Invalid status value {Status}", dto.Status);
+            throw new ArgumentException("Invalid booking status");
+        }
+
+        booking.Status = dto.Status;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Booking status updated successfully for BookingId {BookingId}", dto.BookingId);
+
+        return true;
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Services\EmailService.cs ====================
+
+using HotelBookingAPI.DTOs;
+using HotelBookingAPI.Interfaces;
+using HotelBookingAPI.Models;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.Extensions.Options;
+using MimeKit;
+
+namespace HotelBookingAPI.Services
+{
+    public class EmailService : IEmailService
+    {
+        private readonly EmailSettings _emailSettings;
+        private readonly ILogger<EmailService> _logger;
+
+        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
+        {
+            _emailSettings = emailSettings.Value;
+            _logger = logger;
+        }
+
+        private async Task SendEmailAsync(string toEmail, string toName, string subject, string htmlBody)
+        {
+            try
+            {
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
+                message.To.Add(new MailboxAddress(toName, toEmail));
+                message.Subject = subject;
+
+                var bodyBuilder = new BodyBuilder { HtmlBody = htmlBody };
+                message.Body = bodyBuilder.ToMessageBody();
+
+                using var client = new SmtpClient();
+                await client.ConnectAsync(_emailSettings.SmtpHost, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(_emailSettings.SenderEmail, _emailSettings.AppPassword);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
+
+                _logger.LogInformation("Email sent successfully to {Email}", toEmail);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
+                throw;
+            }
+        }
+
+        public async Task SendWelcomeEmailAsync(string toEmail, string fullName)
+        {
+            var subject = "Welcome to Hotel Booking System!";
+            var body = $@"
+                <div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;'>
+                    <div style='background-color:#1a73e8;padding:24px;text-align:center;'>
+                        <h1 style='color:white;margin:0;'>Hotel Booking System</h1>
+                    </div>
+                    <div style='padding:32px;'>
+                        <h2 style='color:#333;'>Welcome, {fullName}! 🎉</h2>
+                        <p style='color:#555;font-size:15px;line-height:1.6;'>
+                            Thank you for registering with us. Your account has been created successfully.
+                        </p>
+                        <p style='color:#555;font-size:15px;line-height:1.6;'>
+                            You can now browse hotels, check room availability, and make bookings with ease.
+                        </p>
+                        <div style='background-color:#f5f5f5;border-radius:6px;padding:16px;margin-top:24px;'>
+                            <p style='margin:0;color:#333;font-size:14px;'>
+                                If you did not create this account, please contact our support team immediately.
+                            </p>
+                        </div>
+                    </div>
+                    <div style='background-color:#f9f9f9;padding:16px;text-align:center;border-top:1px solid #e0e0e0;'>
+                        <p style='color:#999;font-size:12px;margin:0;'>© 2024 Hotel Booking System. All rights reserved.</p>
+                    </div>
+                </div>";
+
+            await SendEmailAsync(toEmail, fullName, subject, body);
+        }
+
+        public async Task SendLoginNotificationEmailAsync(string toEmail, string fullName)
+        {
+            var subject = "New Login Detected - Hotel Booking System";
+            var body = $@"
+                <div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;'>
+                    <div style='background-color:#1a73e8;padding:24px;text-align:center;'>
+                        <h1 style='color:white;margin:0;'>Hotel Booking System</h1>
+                    </div>
+                    <div style='padding:32px;'>
+                        <h2 style='color:#333;'>Hello, {fullName} 👋</h2>
+                        <p style='color:#555;font-size:15px;line-height:1.6;'>
+                            We noticed a new login to your account on <strong>{DateTime.UtcNow:dddd, dd MMM yyyy} at {DateTime.UtcNow:HH:mm} UTC</strong>.
+                        </p>
+                        <div style='background-color:#fff8e1;border-left:4px solid #f9a825;padding:16px;border-radius:4px;margin-top:16px;'>
+                            <p style='margin:0;color:#555;font-size:14px;'>
+                                If this was you, no action is needed. If you did not log in, please reset your password immediately.
+                            </p>
+                        </div>
+                    </div>
+                    <div style='background-color:#f9f9f9;padding:16px;text-align:center;border-top:1px solid #e0e0e0;'>
+                        <p style='color:#999;font-size:12px;margin:0;'>© 2024 Hotel Booking System. All rights reserved.</p>
+                    </div>
+                </div>";
+
+            await SendEmailAsync(toEmail, fullName, subject, body);
+        }
+
+        public async Task SendBookingConfirmationEmailAsync(string toEmail, string fullName, BookingConfirmationEmailDto dto)
+        {
+            var subject = "Booking Confirmed - Hotel Booking System";
+            int totalNights = (dto.CheckOutDate - dto.CheckInDate).Days;
+            var body = $@"
+                <div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;'>
+                    <div style='background-color:#1a73e8;padding:24px;text-align:center;'>
+                        <h1 style='color:white;margin:0;'>Hotel Booking System</h1>
+                    </div>
+                    <div style='padding:32px;'>
+                        <h2 style='color:#333;'>Booking Confirmed! 🏨</h2>
+                        <p style='color:#555;font-size:15px;line-height:1.6;'>
+                            Dear <strong>{fullName}</strong>, your booking has been confirmed successfully. Here are your booking details:
+                        </p>
+                        <table style='width:100%;border-collapse:collapse;margin-top:20px;'>
+                            <tr style='background-color:#f5f5f5;'>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;width:40%;'>Hotel</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#555;'>{dto.HotelName}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;'>Room Type</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#555;'>{dto.RoomType}</td>
+                            </tr>
+                            <tr style='background-color:#f5f5f5;'>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;'>Check-In</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#555;'>{dto.CheckInDate:dddd, dd MMM yyyy}</td>
+                            </tr>
+                            <tr>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;'>Check-Out</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#555;'>{dto.CheckOutDate:dddd, dd MMM yyyy}</td>
+                            </tr>
+                            <tr style='background-color:#f5f5f5;'>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;'>Total Nights</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#555;'>{totalNights} night(s)</td>
+                            </tr>
+                            <tr>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;'>Guests</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#555;'>{dto.NumberOfGuests}</td>
+                            </tr>
+                            <tr style='background-color:#e8f5e9;'>
+                                <td style='padding:12px;border:1px solid #e0e0e0;font-weight:bold;color:#333;'>Total Price</td>
+                                <td style='padding:12px;border:1px solid #e0e0e0;color:#2e7d32;font-weight:bold;font-size:16px;'>₹{dto.TotalPrice:F2}</td>
+                            </tr>
+                        </table>
+                        <p style='color:#555;font-size:14px;margin-top:24px;'>
+                            Thank you for choosing us. We look forward to hosting you!
+                        </p>
+                    </div>
+                    <div style='background-color:#f9f9f9;padding:16px;text-align:center;border-top:1px solid #e0e0e0;'>
+                        <p style='color:#999;font-size:12px;margin:0;'>© 2024 Hotel Booking System. All rights reserved.</p>
+                    </div>
+                </div>";
+
+            await SendEmailAsync(toEmail, fullName, subject, body);
+        }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Services\HotelService.cs ====================
+
+using HotelBookingAPI.Data;
+using HotelBookingWebsite.DTOs;
+using HotelBookingWebsite.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+public class HotelService : IHotelService
+{
+    private readonly AppDbContext _context;
+    private readonly ILogger<HotelService> _logger;
+
+    public HotelService(AppDbContext context, ILogger<HotelService> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<IEnumerable<HotelResponseDto>> GetAll()
+    {
+        _logger.LogInformation("Fetching all hotels");
+
+        var hotels = await _context.Hotels
+            .Include(h => h.Amenities)
+            .ToListAsync();
+
+        _logger.LogInformation("Fetched {Count} hotels", hotels.Count);
+
+        return hotels.Select(h => new HotelResponseDto
+        {
+            Id = h.Id,
+            Name = h.Name,
+            City = h.City,
+            Country = h.Country,
+            Amenities = h.Amenities.Select(a => a.Name).ToList()
+
+        });
+    }
+
+    public async Task<Hotel> GetById(int id)
+    {
+        _logger.LogInformation("Fetching hotel with Id: {HotelId}", id);
+
+        var hotel = await _context.Hotels
+            .Include(h => h.Rooms)
+            .Include(h => h.Amenities)
+            .FirstOrDefaultAsync(h => h.Id == id);
+
+        if (hotel == null)
+        {
+            _logger.LogWarning("Hotel not found with Id: {HotelId}", id);
+            throw new KeyNotFoundException("Hotel not found");
+        }
+
+        return hotel;
+    }
+
+    public async Task<Hotel> Create(HotelDto dto)
+    {
+        _logger.LogInformation("Creating hotel: {HotelName}", dto.Name);
+
+        var amenities = await _context.Amenities
+            .Where(a => dto.AmenityIds.Contains(a.Id))
+            .ToListAsync();
+
+        var hotel = new Hotel
+        {
+            Name = dto.Name,
+            Location = dto.Location,
+            City = dto.City,
+            Country = dto.Country,
+            Description = dto.Description,
+            ImageUrl = dto.ImageUrl,
+            Amenities = amenities
+        };
+
+        _context.Hotels.Add(hotel);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Hotel created successfully with Id: {HotelId}", hotel.Id);
+
+        return hotel;
+    }
+
+    public async Task<Hotel> Update(int id, HotelDto dto)
+    {
+        _logger.LogInformation("Updating hotel with Id: {HotelId}", id);
+
+        var hotel = await _context.Hotels
+            .Include(h => h.Amenities)
+            .FirstOrDefaultAsync(h => h.Id == id);
+
+        if (hotel == null)
+        {
+            _logger.LogWarning("Update failed. Hotel not found with Id: {HotelId}", id);
+            throw new KeyNotFoundException("Hotel not found");
+        }
+
+        hotel.Name = dto.Name;
+        hotel.Location = dto.Location;
+        hotel.City = dto.City;
+        hotel.Country = dto.Country;
+        hotel.Description = dto.Description;
+        hotel.ImageUrl = dto.ImageUrl;
+
+        hotel.Amenities = await _context.Amenities
+            .Where(a => dto.AmenityIds.Contains(a.Id))
+            .ToListAsync();
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Hotel updated successfully with Id: {HotelId}", id);
+
+        return hotel;
+    }
+
+    public async Task Delete(int id)
+    {
+        _logger.LogInformation("Deleting hotel with Id: {HotelId}", id);
+
+        var hotel = await _context.Hotels.FindAsync(id);
+
+        if (hotel == null)
+        {
+            _logger.LogWarning("Delete failed. Hotel not found with Id: {HotelId}", id);
+            throw new KeyNotFoundException("Hotel not found");
+        }
+
+        _context.Hotels.Remove(hotel);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Hotel deleted successfully with Id: {HotelId}", id);
+    }
+
+    public async Task<Amenity> AddAmenityAsync(string name)
+    {
+        _logger.LogInformation("Adding new amenity: {AmenityName}", name);
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Amenity name is empty");
+            throw new ArgumentException("Amenity name cannot be empty");
+        }
+        // 🔹 Check duplicate
+        var exists = await _context.Amenities
+            .AnyAsync(a => a.Name.ToLower() == name.ToLower());
+
+        if (exists)
+        {
+            _logger.LogWarning("Amenity already exists: {AmenityName}", name);
+            throw new InvalidOperationException("Amenity already exists");
+        }
+
+        var amenity = new Amenity
+        {
+            Name = name
+        };
+
+        await _context.Amenities.AddAsync(amenity);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Amenity added successfully with Id {AmenityId}", amenity.Id);
+
+        return amenity;
+    }
+    public async Task<IEnumerable<Amenity>> GetAllAmenitiesAsync()
+    {
+        _logger.LogInformation("Fetching all amenities");
+        return await _context.Amenities.ToListAsync();
+    }
+
+
+    public async Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds)
+    {
+        _logger.LogInformation(
+            "Searching hotels with filters - City: {City}, MinPrice: {MinPrice}, MaxPrice: {MaxPrice}, Amenities: {AmenitiesCount}",
+            city, minPrice, maxPrice, amenityIds?.Count ?? 0
+        );
+
+        var query = _context.Hotels
+            .Include(h => h.Rooms)
+            .Include(h => h.Amenities)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(city))
+            query = query.Where(h => h.City == city);
+
+        if (minPrice.HasValue)
+            query = query.Where(h => h.Rooms.Any(r => r.Price >= minPrice));
+
+        if (maxPrice.HasValue)
+            query = query.Where(h => h.Rooms.Any(r => r.Price <= maxPrice));
+
+        if (amenityIds != null && amenityIds.Any())
+            query = query.Where(h => h.Amenities.Any(a => amenityIds.Contains(a.Id)));
+
+        var result = await query.ToListAsync();
+
+        _logger.LogInformation("Search returned {Count} hotels", result.Count);
+
+        return result;
+    }
+
+
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Services\JwtService.cs ====================
+
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+public class JwtService : IJwtService
+{
+    private readonly IConfiguration _configuration;
+    public JwtService(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+    public string GenerateToken(User user)
+    {
+        // Define claims based on user information
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
+        };
+        int expiryTime = int.Parse(_configuration["Jwt:Expiry"]!);
+
+        // Create a symmetric security key and signing credentials
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        // token info added
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(expiryTime),
+            signingCredentials: creds
+        );
+
+        // Generate the token string
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Services\RoomService.cs ====================
+
+using HotelBookingAPI.Data;
+using HotelBookingWebsite.DTOs;
+using HotelBookingWebsite.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+public class RoomService : IRoomService
+{
+    private readonly AppDbContext _context;
+    private readonly ILogger<RoomService> _logger;
+
+    public RoomService(AppDbContext context, ILogger<RoomService> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
+
+    // ✅ Get rooms by hotel
+    public async Task<IEnumerable<RoomResponseDto>> GetByHotel(int hotelId)
+    {
+        var rooms = await _context.Rooms
+            .Where(r => r.HotelId == hotelId)
+            .ToListAsync();
+
+        return rooms.Select(room => new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        });
+    }
+
+    // ✅ Get single room
+    public async Task<RoomResponseDto> GetById(int id)
+    {
+        var room = await _context.Rooms.FindAsync(id);
+
+        if (room == null)
+            throw new KeyNotFoundException("Room not found");
+
+        return new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        };
+    }
+
+    // ✅ Create room
+    public async Task<RoomResponseDto> Create(RoomDto dto)
+    {
+        var hotelExists = await _context.Hotels.AnyAsync(h => h.Id == dto.HotelId);
+
+        if (!hotelExists)
+            throw new ArgumentException("Invalid HotelId");
+
+        var room = new Room
+        {
+            HotelId = dto.HotelId,
+            RoomType = dto.RoomType,
+            Price = dto.Price,
+            Capacity = dto.Capacity,
+            IsAvailable = dto.IsAvailable,
+            ImageUrl = dto.ImageUrl
+        };
+
+        _context.Rooms.Add(room);
+        await _context.SaveChangesAsync();
+
+        return new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        };
+    }
+
+    // ✅ Update room
+    public async Task<RoomResponseDto> Update(int id, RoomDto dto)
+    {
+        var room = await _context.Rooms.FindAsync(id);
+
+        if (room == null)
+            throw new KeyNotFoundException("Room not found");
+
+        room.RoomType = dto.RoomType;
+        room.Price = dto.Price;
+        room.Capacity = dto.Capacity;
+        room.IsAvailable = dto.IsAvailable;
+        room.ImageUrl = dto.ImageUrl;
+
+        await _context.SaveChangesAsync();
+
+        return new RoomResponseDto
+        {
+            Id = room.Id,
+            RoomType = room.RoomType,
+            Price = room.Price,
+            Capacity = room.Capacity,
+            IsAvailable = room.IsAvailable
+        };
+    }
+    public async Task<IEnumerable<RoomResponseDto>> GetAll()
+    {
+        var rooms = await _context.Rooms.ToListAsync();
+
+        return rooms.Select(r => new RoomResponseDto
+        {
+            Id = r.Id,
+            RoomType = r.RoomType,
+            Price = r.Price,
+            Capacity = r.Capacity,
+            IsAvailable = r.IsAvailable
+        });
+    }
+
+    public async Task Delete(int id)
+    {
+        var room = await _context.Rooms.FindAsync(id);
+
+        if (room == null)
+            throw new KeyNotFoundException("Room not found");
+
+        _context.Rooms.Remove(room);
+        await _context.SaveChangesAsync();
+
+
+        _logger.LogInformation("Room deleted successfully with Id: {RoomId}", id);
+    }
+
+    }
+
+
+
+
+    
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Interfaces\IAuthService.cs ====================
+
+public interface IAuthService
+{
+    Task<AuthResponseDto?> Login(LoginDto dto);
+    Task<string?> Register(RegisterDto dto);
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Interfaces\IBookingService.cs ====================
+
+using HotelBookingAPI.DTOs;
+
+namespace HotelBookingAPI.Interfaces
+{
+    public interface IBookingService
+    {
+        Task<BookingResponseDto> CreateBookingAsync(int userId, BookingDto dto);
+
+        Task<IEnumerable<BookingResponseDto>> GetUserBookingsAsync(int userId);
+
+        Task<bool> UpdateBookingStatusAsync(BookingStatusDto dto);
+
+        Task<IEnumerable<BookingResponseDto>> GetAllBookingsAsync();
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Interfaces\IEmailService.cs ====================
+
+using HotelBookingAPI.DTOs;
+
+namespace HotelBookingAPI.Interfaces
+{
+    public interface IEmailService
+    {
+        Task SendWelcomeEmailAsync(string toEmail, string fullName);
+        Task SendLoginNotificationEmailAsync(string toEmail, string fullName);
+        Task SendBookingConfirmationEmailAsync(string toEmail, string fullName, BookingConfirmationEmailDto dto);
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Interfaces\IHotelService.cs ====================
+
+using HotelBookingWebsite.DTOs;
+using HotelBookingWebsite.Models;
+
+public interface IHotelService
+{
+    Task<IEnumerable<HotelResponseDto>> GetAll();
+    Task<Hotel> GetById(int id);
+    Task<Hotel> Create(HotelDto dto);
+    Task<Hotel> Update(int id, HotelDto dto);
+    Task Delete(int id);
+
+    Task<IEnumerable<Hotel>> Search(string? city, decimal? minPrice, decimal? maxPrice, List<int>? amenityIds);
+
+    Task<Amenity> AddAmenityAsync(string name);
+    Task<IEnumerable<Amenity>> GetAllAmenitiesAsync();
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Interfaces\IJwtService.cs ====================
+
+public interface IJwtService
+{
+    string GenerateToken(User user);
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\Interfaces\IRoomService.cs ====================
+
+using HotelBookingWebsite.DTOs;
+
+using HotelBookingWebsite.Models;
+
+public interface IRoomService
+{
+    Task<IEnumerable<RoomResponseDto>> GetByHotel(int hotelId);
+    Task<RoomResponseDto> GetById(int id);
+    Task<RoomResponseDto> Create(RoomDto dto);
+    Task<RoomResponseDto> Update(int id, RoomDto dto);
+    Task Delete(int id);
+    Task<IEnumerable<RoomResponseDto>> GetAll();
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\AmenityDto.cs ====================
+
+namespace HotelBookingWebsite.DTOs
+{
+    public class AmenityDto
+    {
+        public string Name { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\AuthResponseDto.cs ====================
+
+using HotelBookingWebsite.Enum;
+
+public class AuthResponseDto
+{
+    public string Token { get; set; }
+    public int UserId { get; set; }
+    public string FullName { get; set; }    
+    public string Email { get; set; }
+    public UserRole Role { get; set; }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\BookingConfirmationEmailDto.cs ====================
+
+namespace HotelBookingAPI.DTOs
+{
+    public class BookingConfirmationEmailDto
+    {
+        public string HotelName { get; set; }
+        public string RoomType { get; set; }
+        public DateTime CheckInDate { get; set; }
+        public DateTime CheckOutDate { get; set; }
+        public int NumberOfGuests { get; set; }
+        public decimal TotalPrice { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\BookingDto.cs ====================
+
+using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace HotelBookingAPI.DTOs
+{
+    public class BookingDto
+    {
+        [Required]
+        public int RoomId { get; set; }
+
+        [Required]
+        public DateTime CheckInDate { get; set; }
+
+        [Required]
+        public DateTime CheckOutDate { get; set; }
+
+        [Required]
+        public int NumberOfGuests { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\BookingResponseDto.cs ====================
+
+using System;
+
+namespace HotelBookingAPI.DTOs
+{
+    public class BookingResponseDto
+    {
+        public string BookingNumber { get; set; }
+
+        public string HotelName { get; set; }
+
+        public string RoomType { get; set; }
+
+        public DateTime CheckInDate { get; set; }
+
+        public DateTime CheckOutDate { get; set; }
+
+        public int NumberOfGuests { get; set; }
+
+        public decimal TotalPrice { get; set; }
+
+        public string Status { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\BookingStatusDto.cs ====================
+
+using HotelBookingAPI.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace HotelBookingAPI.DTOs
+{
+    public class BookingStatusDto
+    {
+        [Required]
+        public int BookingId { get; set; }
+
+        [Required]
+        public BookingStatus Status { get; set; }
+        // Suggested: Confirmed / Cancelled
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\HotelDto.cs ====================
+
+public class HotelDto
+{
+    public string Name { get; set; }
+    public string Location { get; set; }
+    public string City { get; set; }
+    public string Country { get; set; }
+    public string Description { get; set; }
+    public string ImageUrl { get; set; }
+
+    public List<int> AmenityIds { get; set; }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\HotelResponseDto.cs ====================
+
+namespace HotelBookingWebsite.DTOs
+{
+    public class HotelResponseDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+
+        public List<string> Amenities { get; set; }
+    }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\LoginDto.cs ====================
+
+using System.ComponentModel.DataAnnotations;
+
+public class LoginDto
+{
+    [Required]
+    [EmailAddress]
+    [StringLength(100)]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
+    public string Password { get; set; } = string.Empty;
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\PromotionDto.cs ====================
+
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\RegisterDto.cs ====================
+
+using System.ComponentModel.DataAnnotations;
+
+public class RegisterDto
+{
+    [Required]
+    [StringLength(100)]
+    public string FullName { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    [StringLength(100)]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [Phone]
+    [StringLength(20)]
+    public string Phone { get; set; } = string.Empty;
+
+    [Required]
+    public string Password { get; set; } = string.Empty;
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\RoomDto.cs ====================
+
+public class RoomDto
+{
+    public int HotelId { get; set; }
+    public string RoomType { get; set; }
+    public decimal Price { get; set; }
+    public int Capacity { get; set; }
+    public bool IsAvailable { get; set; }
+    public string ImageUrl { get; set; }
+}
+
+==================== C:\Users\dhanu\OneDrive\Desktop\Projects\New Hotel Booking Backend\DTOs\RoomResponseDto.cs ====================
+
+namespace HotelBookingWebsite.DTOs
+{
+    public class RoomResponseDto
+    {
+        public int Id { get; set; }
+        public string RoomType { get; set; }
+        public decimal Price { get; set; }
+        public int Capacity { get; set; }
+        public bool IsAvailable { get; set; }
+    }
+}
